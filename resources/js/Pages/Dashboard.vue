@@ -1,16 +1,28 @@
-<script setup>
+<script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
 
-defineProps({
-    tasks: Array
-});
+interface Task {
+    id: number;
+    title: string;
+    status: 'pending' | 'in-progress' | 'completed';
+    priority: 'low' | 'medium' | 'high';
+    due_date: string;
+    created_at?: string;
+    updated_at?: string;
+}
 
-const formatDate = (dateString) => {
+interface Props {
+    tasks: Task[];
+}
+
+defineProps<Props>();
+
+const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString();
 };
 
-const getStatusBadgeClass = (status) => {
+const getStatusBadgeClass = (status: Task['status']): string => {
     const baseClasses = 'px-2 py-1 rounded-full text-xs font-semibold';
     switch (status) {
         case 'completed':
@@ -24,7 +36,7 @@ const getStatusBadgeClass = (status) => {
     }
 };
 
-const getPriorityBadgeClass = (priority) => {
+const getPriorityBadgeClass = (priority: Task['priority']): string => {
     const baseClasses = 'px-2 py-1 rounded-full text-xs font-semibold';
     switch (priority) {
         case 'high':
