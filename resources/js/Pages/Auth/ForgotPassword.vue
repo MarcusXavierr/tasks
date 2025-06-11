@@ -31,10 +31,7 @@ const submit = () => {
             you to choose a new one.
         </div>
 
-        <div
-            v-if="status"
-            class="mb-4 text-sm font-medium text-green-600"
-        >
+        <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
             {{ status }}
         </div>
 
@@ -44,9 +41,9 @@ const submit = () => {
 
                 <TextInput
                     id="email"
+                    v-model="form.email"
                     type="email"
                     class="mt-1 block w-full"
-                    v-model="form.email"
                     required
                     autofocus
                     autocomplete="username"
