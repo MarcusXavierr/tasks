@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 
 class Task extends Model
 {
@@ -30,7 +30,7 @@ class Task extends Model
         if ($status && in_array($status, ['pending', 'in-progress', 'completed'])) {
             return $query->where('status', $status);
         }
-        
+
         return $query;
     }
 
@@ -42,7 +42,7 @@ class Task extends Model
         if ($priority && in_array($priority, ['low', 'medium', 'high'])) {
             return $query->where('priority', $priority);
         }
-        
+
         return $query;
     }
 
@@ -53,19 +53,23 @@ class Task extends Model
     {
         $validSortColumns = ['due_date', 'created_at', 'priority'];
         $validDirections = ['asc', 'desc'];
-        
+
         if ($sortBy && in_array($sortBy, $validSortColumns)) {
             $direction = in_array($sortDirection, $validDirections) ? $sortDirection : 'asc';
-            
+
             if ($sortBy === 'priority') {
-                // Custom sorting for priority (high -> medium -> low)
-                $order = $direction === 'asc' ? 'desc' : 'asc';
-                return $query->orderByRaw("FIELD(priority, 'high', 'medium', 'low') " . $order);
+                return $query->orderByRaw("
+                    CASE priority
+                        WHEN 'high' THEN 1
+                        WHEN 'medium' THEN 2
+                        WHEN 'low' THEN 3
+                        ELSE 4
+                    END ".$direction);
             }
-            
+
             return $query->orderBy($sortBy, $direction);
         }
-        
+
         // Default sorting by created_at desc
         return $query->orderBy('created_at', 'desc');
     }
