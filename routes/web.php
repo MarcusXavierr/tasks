@@ -16,6 +16,7 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', [TaskController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+Route::post('/tasks', [TaskController::class, 'store'])->middleware(['auth', 'verified'])->name('tasks.store');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

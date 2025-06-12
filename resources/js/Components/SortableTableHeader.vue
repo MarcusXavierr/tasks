@@ -18,7 +18,7 @@ const getSortIcon = (column: string): string => {
     if (taskStore.filters.sort_by !== column) {
         return '↕️' // Both arrows when not sorted by this column
     }
-    
+
     if (taskStore.filters.sort_direction === 'asc') {
         return '↑' // Up arrow for ascending
     } else {
@@ -28,17 +28,17 @@ const getSortIcon = (column: string): string => {
 
 const getSortClasses = (column: string): string => {
     const baseClasses = 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none'
-    
+
     if (taskStore.filters.sort_by === column) {
         return `${baseClasses} bg-gray-100`
     }
-    
+
     return baseClasses
 }
 </script>
 
 <template>
-    <th 
+    <th
         :class="getSortClasses(column)"
         @click="handleSort(column)"
     >
@@ -47,4 +47,4 @@ const getSortClasses = (column: string): string => {
             <span class="text-gray-400 text-sm">{{ getSortIcon(column) }}</span>
         </div>
     </th>
-</template> 
+</template>

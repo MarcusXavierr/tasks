@@ -2,9 +2,10 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import TaskFilters from '@/Components/TaskFilters.vue';
 import SortableTableHeader from '@/Components/SortableTableHeader.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import TaskCreateModal from '@/Components/TaskCreateModal.vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { useTaskStore } from '@/stores/taskStore';
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 
 interface Task {
     id: number;
@@ -44,10 +45,17 @@ interface Filters {
 interface Props {
     tasks: PaginatedTasks;
     filters: Filters;
+    flash?: {
+        success?: string;
+        error?: string;
+    };
 }
 
 const props = defineProps<Props>();
 const taskStore = useTaskStore();
+
+const showCreateModal = ref(false);
+const successMessage = ref<string | null>(null);
 
 // Initialize store with server filters on component mount
 onMounted(() => {
@@ -85,6 +93,25 @@ const getPriorityBadgeClass = (priority: Task['priority']): string => {
             return `${baseClasses} bg-gray-100 text-gray-800`;
     }
 };
+
+const openCreateModal = () => {
+    showCreateModal.value = true;
+};
+
+const closeCreateModal = () => {
+    showCreateModal.value = false;
+};
+
+const handleTaskCreated = (message: string) => {
+    successMessage.value = message;
+    // Refresh the page to show the new task
+    router.reload({ only: ['tasks'] });
+    
+    // Clear success message after 5 seconds
+    setTimeout(() => {
+        successMessage.value = null;
+    }, 5000);
+};
 </script>
 
 <template>
@@ -92,13 +119,56 @@ const getPriorityBadgeClass = (priority: Task['priority']): string => {
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                Tasks Dashboard
-            </h2>
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold leading-tight text-gray-800">
+                    Tasks Dashboard
+                </h2>
+                <button
+                    @click="openCreateModal"
+                    class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                >
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Create Task
+                </button>
+            </div>
         </template>
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <!-- Success Message from Modal -->
+                <div v-if="successMessage" class="mb-6 rounded-md bg-green-50 p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-green-800">
+                                {{ successMessage }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Success Message from Server -->
+                <div v-if="props.flash?.success" class="mb-6 rounded-md bg-green-50 p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-green-800">
+                                {{ props.flash.success }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Filters -->
                 <TaskFilters />
 
@@ -224,5 +294,12 @@ const getPriorityBadgeClass = (priority: Task['priority']): string => {
                 </div>
             </div>
         </div>
+
+        <!-- Task Create Modal -->
+        <TaskCreateModal 
+            :show="showCreateModal" 
+            @close="closeCreateModal"
+            @success="handleTaskCreated"
+        />
     </AuthenticatedLayout>
 </template>

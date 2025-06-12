@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreTaskRequest;
 use App\Models\Task;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -13,24 +15,26 @@ class TaskController extends Controller
      */
     public function index(Request $request)
     {
-        $filters = $request->validate([
-            'status' => 'nullable|string|in:pending,in-progress,completed',
-            'priority' => 'nullable|string|in:low,medium,high',
-            'sort_by' => 'nullable|string|in:due_date,created_at,priority',
-            'sort_direction' => 'nullable|string|in:asc,desc',
-            'per_page' => 'nullable|integer|min:5|max:50',
-        ]);
+        // Extract and sanitize filters without validation to ignore invalid values
+        $status = $request->input('status');
+        $priority = $request->input('priority');
+        $sortBy = $request->input('sort_by');
+        $sortDirection = $request->input('sort_direction', 'asc');
+        $perPage = $request->input('per_page', 10);
+
+        // Sanitize values
+        $validStatus = in_array($status, ['pending', 'in-progress', 'completed']) ? $status : null;
+        $validPriority = in_array($priority, ['low', 'medium', 'high']) ? $priority : null;
+        $validSortBy = in_array($sortBy, ['due_date', 'created_at', 'priority']) ? $sortBy : null;
+        $validSortDirection = in_array($sortDirection, ['asc', 'desc']) ? $sortDirection : 'asc';
+        $validPerPage = is_numeric($perPage) && $perPage >= 5 && $perPage <= 50 ? (int) $perPage : 10;
 
         $query = Task::query()
-            ->byStatus($filters['status'] ?? null)
-            ->byPriority($filters['priority'] ?? null)
-            ->sortBy(
-                $filters['sort_by'] ?? null, 
-                $filters['sort_direction'] ?? 'asc'
-            );
+            ->byStatus($validStatus)
+            ->byPriority($validPriority)
+            ->sortBy($validSortBy, $validSortDirection);
 
-        $perPage = $filters['per_page'] ?? 10;
-        $tasks = $query->paginate($perPage);
+        $tasks = $query->paginate($validPerPage);
 
         // Append filters to pagination links to preserve state
         $tasks->appends($request->query());
@@ -38,12 +42,30 @@ class TaskController extends Controller
         return Inertia::render('Dashboard', [
             'tasks' => $tasks,
             'filters' => [
-                'status' => $filters['status'] ?? null,
-                'priority' => $filters['priority'] ?? null,
-                'sort_by' => $filters['sort_by'] ?? null,
-                'sort_direction' => $filters['sort_direction'] ?? null,
-                'per_page' => $perPage,
+                'status' => $validStatus,
+                'priority' => $validPriority,
+                'sort_by' => $validSortBy,
+                'sort_direction' => $validSortDirection,
+                'per_page' => $validPerPage,
             ],
         ]);
+    }
+
+    /**
+     * Store a newly created task in storage
+     */
+    public function store(StoreTaskRequest $request): JsonResponse|\Illuminate\Http\RedirectResponse
+    {
+        $task = Task::create($request->validated());
+
+        if ($request->expectsJson() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Task created successfully!',
+                'task' => $task,
+            ], 201);
+        }
+
+        return redirect()->route('dashboard')->with('success', 'Task created successfully!');
     }
 }
